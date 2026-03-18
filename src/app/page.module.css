@@ -295,3 +295,17 @@
       align-items: center;
   }
 }
+
+/* Animaciones locales para evitar problemas de scope en CSS Modules */
+@keyframes fadeInUp {
+  to {
+      opacity: 1;
+      transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  to {
+      opacity: 1;
+  }
+}
