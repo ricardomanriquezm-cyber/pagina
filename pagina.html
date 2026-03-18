@@ -423,23 +423,30 @@
             </div>
 
             <form class="contact-form" id="contactForm">
+                <!-- Web3Forms: reemplaza YOUR_ACCESS_KEY con tu clave de web3forms.com -->
+                <input type="hidden" name="access_key" value="YOUR_ACCESS_KEY">
+                <input type="hidden" name="subject" value="Nuevo contacto - X+M² arquitectos">
+                <input type="hidden" name="from_name" value="Web X+M² arquitectos">
+                <!-- Honeypot anti-spam -->
+                <input type="checkbox" name="botcheck" style="display:none">
+
                 <div class="form-group">
-                    <input type="text" id="name" placeholder=" " required>
+                    <input type="text" id="name" name="name" placeholder=" " required>
                     <label for="name">Nombre</label>
                 </div>
 
                 <div class="form-group">
-                    <input type="email" id="email" placeholder=" " required>
+                    <input type="email" id="email" name="email" placeholder=" " required>
                     <label for="email">Email</label>
                 </div>
 
                 <div class="form-group">
-                    <input type="text" id="subject" placeholder=" ">
+                    <input type="text" id="subject" name="subject_msg" placeholder=" ">
                     <label for="subject">Asunto</label>
                 </div>
 
                 <div class="form-group">
-                    <textarea id="message" placeholder=" " required></textarea>
+                    <textarea id="message" name="message" placeholder=" " required></textarea>
                     <label for="message">Mensaje</label>
                 </div>
 
@@ -454,13 +461,10 @@
     </div>
 
     <script>
-        // Animación suave al cargar
         document.addEventListener('DOMContentLoaded', () => {
             const form = document.getElementById('contactForm');
 
-            // Efecto de escritura para el label (simulación)
-            const inputs = document.querySelectorAll('input, textarea');
-
+            const inputs = document.querySelectorAll('input:not([type=hidden]):not([type=checkbox]), textarea');
             inputs.forEach(input => {
                 input.addEventListener('focus', () => {
                     input.parentElement.style.transform = 'translateX(5px)';
@@ -470,37 +474,67 @@
                 });
             });
 
-            // Manejo del formulario
-            form.addEventListener('submit', (e) => {
+            form.addEventListener('submit', async (e) => {
                 e.preventDefault();
 
                 const btn = form.querySelector('.submit-btn');
                 const originalText = btn.textContent;
 
-                // Feedback visual
                 btn.textContent = 'Enviando...';
                 btn.style.opacity = '0.7';
+                btn.disabled = true;
 
-                setTimeout(() => {
-                    btn.textContent = 'Mensaje Enviado';
-                    btn.style.background = 'var(--text-primary)';
-                    btn.style.color = 'var(--bg-dark)';
+                try {
+                    const formData = new FormData(form);
+
+                    const userSubject = formData.get('subject_msg');
+                    if (userSubject) {
+                        formData.set('subject', `Contacto X+M² - ${userSubject}`);
+                    }
+                    formData.delete('subject_msg');
+
+                    const response = await fetch('https://api.web3forms.com/submit', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        btn.textContent = '✓ Mensaje Enviado';
+                        btn.style.background = 'var(--text-primary)';
+                        btn.style.color = 'var(--bg-dark)';
+                        btn.style.opacity = '1';
+                        form.reset();
+
+                        setTimeout(() => {
+                            btn.textContent = originalText;
+                            btn.style.background = '';
+                            btn.style.color = '';
+                            btn.disabled = false;
+                        }, 3000);
+                    } else {
+                        throw new Error(data.message || 'Error al enviar');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    btn.textContent = '✗ Error — Intenta de nuevo';
+                    btn.style.opacity = '1';
+                    btn.style.borderColor = 'rgba(255,100,100,0.6)';
+                    btn.style.color = 'rgba(255,150,150,0.9)';
 
                     setTimeout(() => {
                         btn.textContent = originalText;
-                        btn.style.background = '';
+                        btn.style.borderColor = '';
                         btn.style.color = '';
-                        btn.style.opacity = '';
-                        form.reset();
-                    }, 2000);
-                }, 1500);
+                        btn.disabled = false;
+                    }, 3000);
+                }
             });
 
-            // Efecto parallax muy sutil en el mouse
             document.addEventListener('mousemove', (e) => {
                 const x = (e.clientX / window.innerWidth - 0.5) * 10;
                 const y = (e.clientY / window.innerHeight - 0.5) * 10;
-
                 const logo = document.querySelector('.logo');
                 logo.style.transform = `translate(${x * 0.5}px, ${y * 0.5}px)`;
             });
